@@ -17,7 +17,9 @@ public class PlantillaTurnos {
 
 	public SolicitudCambioTurno solicitarCambio(Turno anterior, Turno nuevo) {
 		if (!turnos.contains(anterior)) throw new IllegalArgumentException("El turno anterior no existe");
-		return new SolicitudCambioTurno(anterior, nuevo);
+		SolicitudCambioTurno solicitud = new SolicitudCambioTurno(anterior, nuevo);
+		solicitud.setPlantilla(this);
+		return solicitud;
 	}
 
 	public void aprobarCambio(Administrador administrador, SolicitudCambioTurno solicitud) {
@@ -35,6 +37,25 @@ public class PlantillaTurnos {
 	}
 
 	public List<Turno> getTurnos() { return new ArrayList<Turno>(turnos); }
+
+	public int getEntrenadoresDisponibles() {
+		int disponibles = 0;
+		for (Turno turno : turnos) if (turno.getEmpleado() instanceof Entrenador) disponibles++;
+		return disponibles;
+	}
+
+	public int getFisioterapeutasDisponibles() {
+		int disponibles = 0;
+		for (Turno turno : turnos) if (turno.getEmpleado() instanceof Fisioterapeuta) disponibles++;
+		return disponibles;
+	}
+
+	public static void aprobarSolicitud(Administrador administrador, SolicitudCambioTurno solicitud) {
+		if (solicitud == null || solicitud.getPlantilla() == null) {
+			throw new IllegalArgumentException("La solicitud no pertenece a una plantilla");
+		}
+		solicitud.getPlantilla().aprobarCambio(administrador, solicitud);
+	}
 
 	public boolean estaDeTurno(Empleado empleado, LocalDateTime momento) {
 		if (empleado == null || momento == null) return false;
@@ -56,9 +77,7 @@ public class PlantillaTurnos {
 				if (turno.getEmpleado() instanceof Entrenador) entrenadores++;
 				if (turno.getEmpleado() instanceof Fisioterapeuta) fisioterapeutas++;
 			}
-			if (entrenadores > 0 || fisioterapeutas > 0) {
-				if (entrenadores < 2 || fisioterapeutas < 1) return false;
-			}
+			if (entrenadores < 2 || fisioterapeutas < 1) return false;
 		}
 		return true;
 	}

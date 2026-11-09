@@ -5,6 +5,7 @@ public class SolicitudCambioTurno {
 	private Turno turnoNuevo;
 	private boolean procesada;
 	private boolean aprobada;
+	private PlantillaTurnos plantilla;
 
 	public SolicitudCambioTurno(Turno turnoAnterior, Turno turnoNuevo) {
 		if (turnoAnterior == null || turnoNuevo == null) throw new IllegalArgumentException("Los turnos son obligatorios");
@@ -16,6 +17,9 @@ public class SolicitudCambioTurno {
 	public Turno getTurnoNuevo() { return turnoNuevo; }
 	public boolean isProcesada() { return procesada; }
 	public boolean isAprobada() { return aprobada; }
+	public boolean estaAprobada() { return aprobada; }
+	PlantillaTurnos getPlantilla() { return plantilla; }
+	void setPlantilla(PlantillaTurnos plantilla) { this.plantilla = plantilla; }
 
 	void resolver(boolean aprobada) {
 		if (procesada) throw new IllegalStateException("La solicitud ya fue procesada");

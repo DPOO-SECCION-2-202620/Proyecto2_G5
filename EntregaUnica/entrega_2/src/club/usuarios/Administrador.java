@@ -12,6 +12,7 @@ import club.partidos.PartidoInterno;
 import club.personal.Entrenador;
 import club.personal.Empleado;
 import club.personal.PlantillaTurnos;
+import club.personal.SolicitudCambioTurno;
 import club.tienda.SugerenciaProducto;
 import club.deportes.Deporte;
 import club.torneos.ModalidadTorneo;
@@ -75,6 +76,10 @@ public class Administrador extends Usuario {
 
 	public void rechazarSugerencia(SugerenciaProducto sugerencia) {
 		sugerencia.noAprobar(this);
+	}
+
+	public void aprobarCambioTurno(SolicitudCambioTurno solicitud) {
+		PlantillaTurnos.aprobarSolicitud(this, solicitud);
 	}
 
 	public TorneoInterno crearTorneo(String deporte, String categoria, String modalidad,

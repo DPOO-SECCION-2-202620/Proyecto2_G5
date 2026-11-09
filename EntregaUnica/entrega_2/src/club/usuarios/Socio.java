@@ -12,6 +12,7 @@ public class Socio extends Usuario {
 	private List<InscripcionEquipo> inscripciones = new ArrayList<InscripcionEquipo>();
 	private int suspensionesTotales;
 	private int suspensionRestante;
+	private String motivoSuspension;
 	
 	private SaldoFidelidad puntosFidelidad;
 	
@@ -46,13 +47,21 @@ public class Socio extends Usuario {
 		this.suspensionRestante += partidos;
 	}
 
+	public void sancionar(String motivo) {
+		if (motivo == null || motivo.isBlank()) throw new IllegalArgumentException("El motivo es obligatorio");
+		registrarSuspension(1);
+		this.motivoSuspension = motivo;
+	}
+
 	public void cumplirPartidoSuspension() {
 		if (suspensionRestante > 0) suspensionRestante -= 1;
+		if (suspensionRestante == 0) motivoSuspension = null;
 	}
 
 	public boolean estaHabilitado() { return suspensionRestante == 0; }
 	public int getSuspensionesTotales() { return suspensionesTotales; }
 	public int getSuspensionRestante() { return suspensionRestante; }
+	public String getMotivoSuspension() { return motivoSuspension; }
 
 	public void restaurarSuspensiones(int suspensionesTotales, int suspensionRestante) {
 		if (suspensionesTotales < 0 || suspensionRestante < 0) {

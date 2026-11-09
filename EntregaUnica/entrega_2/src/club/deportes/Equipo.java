@@ -96,6 +96,39 @@ public abstract class Equipo {
 		return puntosRanking;
 	}
 
+	public void inscribirSocio(Socio socio, int dorsal, String posicion) {
+		if (!(deporte instanceof DeporteConjunto) || posicion == null) {
+			throw new IllegalArgumentException("La posición no es válida");
+		}
+		Enum<?> posicionEncontrada = null;
+		for (Enum<?> opcion : ((DeporteConjunto) deporte).getPosiciones()) {
+			if (opcion.name().equalsIgnoreCase(posicion)) posicionEncontrada = opcion;
+		}
+		if (posicionEncontrada == null) throw new IllegalArgumentException("La posición no pertenece al deporte");
+		new InscripcionEquipo().inscribirSocio(socio, this, posicionEncontrada, dorsal);
+	}
+
+	public boolean contieneJugador(Socio socio) {
+		for (InscripcionEquipo inscripcion : nomina)
+			if (inscripcion.getSocio() == socio) return true;
+		return false;
+	}
+
+	public int getDorsal(Socio socio) {
+		return buscarInscripcion(socio).getNumeroCamiseta();
+	}
+
+	public String getPosicion(Socio socio) {
+		String posicion = buscarInscripcion(socio).getPosicion().name().toLowerCase();
+		return Character.toUpperCase(posicion.charAt(0)) + posicion.substring(1);
+	}
+
+	private InscripcionEquipo buscarInscripcion(Socio socio) {
+		for (InscripcionEquipo inscripcion : nomina)
+			if (inscripcion.getSocio() == socio) return inscripcion;
+		throw new IllegalArgumentException("El socio no pertenece al equipo");
+	}
+
 	public void sumarPuntosRanking(int puntos) {
 		if (puntos < 0) throw new IllegalArgumentException("Los puntos no pueden ser negativos");
 		this.puntosRanking += puntos;
@@ -117,6 +150,18 @@ public abstract class Equipo {
 			}
 		}
 		return habilitados;
+	}
+
+	public List<Socio> getJugadoresNoDisponibles() {
+		List<Socio> noDisponibles = new ArrayList<Socio>();
+		for (InscripcionEquipo inscripcion : nomina)
+			if (!inscripcion.getSocio().estaHabilitado()) noDisponibles.add(inscripcion.getSocio());
+		return noDisponibles;
+	}
+
+	public boolean puedeDisputarPartido() {
+		if (!(deporte instanceof DeporteConjunto)) return false;
+		return getJugadoresHabilitados().size() >= ((DeporteConjunto) deporte).getMinimoJugadores();
 	}
 
 	public void setActivo(boolean activo) {

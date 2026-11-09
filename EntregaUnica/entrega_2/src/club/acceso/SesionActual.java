@@ -22,6 +22,7 @@ import club.partidos.Partido;
 import club.partidos.PartidoInterno;
 import club.partidos.PartidoPractica;
 import club.personal.Entrenador;
+import club.personal.SolicitudCambioTurno;
 import club.reportes.ConsultasAdministrativas;
 import club.reportes.PeriodoReporte;
 import club.reportes.ReporteDeportivo;
@@ -144,6 +145,18 @@ public class SesionActual {
 		socio.cumplirPartidoSuspension();
 	}
 
+	public boolean puedeDisputarPartido(Equipo equipo) {
+		obtenerEntrenador();
+		validarEquipoRegistrado(equipo);
+		return equipo.puedeDisputarPartido();
+	}
+
+	public List<Socio> consultarJugadoresNoDisponibles(Equipo equipo) {
+		obtenerEntrenador();
+		validarEquipoRegistrado(equipo);
+		return equipo.getJugadoresNoDisponibles();
+	}
+
 	public Socio registrarSocio(String email, String contrasenia) {
 		return obtenerAdministrador().registrarSocio(email, contrasenia);
 	}
@@ -202,6 +215,9 @@ public class SesionActual {
 
 	public void darDeBaja(Equipo equipo) { obtenerAdministrador().darDeBaja(equipo); }
 	public void darDeBaja(Socio socio) { obtenerAdministrador().darDeBaja(socio); }
+	public void aprobarCambioTurno(SolicitudCambioTurno solicitud) {
+		obtenerAdministrador().aprobarCambioTurno(solicitud);
+	}
 
 	public List<Reserva> consultarReservasAdministrativas() {
 		return new ConsultasAdministrativas().consultarReservas(obtenerAdministrador());
@@ -236,6 +252,12 @@ public class SesionActual {
 	private void validarSesionActiva() {
 		if (!haySesionAtiva()) throw new IllegalStateException("No hay una sesión activa");
 		if (!usuarioActual.isActivo()) throw new IllegalStateException("El usuario está inactivo");
+	}
+
+	private void validarEquipoRegistrado(Equipo equipo) {
+		if (equipo == null || !Equipo.getEquiposRegistrados().containsValue(equipo)) {
+			throw new IllegalArgumentException("El equipo no existe");
+		}
 	}
 
 	private Socio obtenerSocio() {

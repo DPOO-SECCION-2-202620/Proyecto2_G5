@@ -38,11 +38,18 @@ public class PruebaInscripcionEquipos {
 	private Socio jugadorRanking;
 	private Entrenador empleadoDeTurno;
 	private Entrenador empleadoLibre;
+	private Equipo equipo1;
+	private Equipo equipo2;
+	private Equipo equipoSub13;
+	private Socio socio1;
+	private Socio socio2;
+	private Socio socioMayor;
 
     @BeforeEach
     void setUp() {
 		CatalogoTorneos.limpiar();
         Equipo.getEquiposDisponibles().clear();
+		Equipo.getEquiposRegistrados().clear();
         RepositorioUsuarios.getRepositorioUsuarios().clear();
         futbol = new Futbol();
         equipo = crearEquipo("Tigres", Categoria.SUB15, 20, futbol);
@@ -68,6 +75,16 @@ public class PruebaInscripcionEquipos {
 				10, TipoTorneo.RECREATIVO, 0, Torneo.Formato.LIGA, fechaTorneo);
 		torneoCompetitivo = administrador.crearTorneo("Tenis", "Avanzado", "INDIVIDUAL",
 				10, TipoTorneo.COMPETITIVO, 30000, Torneo.Formato.LIGA, fechaTorneo);
+		Futbol futbolHistorias = new Futbol();
+		equipo1 = crearEquipo("Equipo HU SOC 1", Categoria.SUB15, 20, futbolHistorias);
+		equipo2 = crearEquipo("Equipo HU SOC 2", Categoria.SUB15, 20, futbolHistorias);
+		equipoSub13 = crearEquipo("Equipo HU SUB13", Categoria.SUB13, 20, futbolHistorias);
+		socio1 = new Socio("socio1-hu@club.co", "clave");
+		socio1.setFechaNacimiento(LocalDate.now().minusYears(14));
+		socio2 = new Socio("socio2-hu@club.co", "clave");
+		socio2.setFechaNacimiento(LocalDate.now().minusYears(14));
+		socioMayor = new Socio("socio-mayor-hu@club.co", "clave");
+		socioMayor.setFechaNacimiento(LocalDate.now().minusYears(20));
     }
 
     @Test
@@ -193,6 +210,54 @@ public class PruebaInscripcionEquipos {
 	    torneo.iniciar();
 	
 	    assertThrows(IllegalStateException.class, () ->{torneo.inscribir(jugador1);});
+	}
+
+	@Test
+	void testInscribirSocioEquipo()
+	{
+	    // HU-SOC-02 CA-1: Inscripcion valida
+	    int cupos = equipo1.getCuposDisponibles();
+
+	    equipo1.inscribirSocio(socio1, 10, "Delantero");
+
+	    assertTrue(equipo1.contieneJugador(socio1));
+	    assertEquals(cupos - 1, equipo1.getCuposDisponibles());
+	    assertEquals(10, equipo1.getDorsal(socio1));
+	    assertEquals("Delantero", equipo1.getPosicion(socio1));
+	}
+
+	@Test
+	void testInscripcionCategoriaIncorrecta()
+	{
+	    // HU-SOC-02 CA-2: Edad incompatible
+	    assertThrows(IllegalArgumentException.class, () ->
+	    {
+	        equipoSub13.inscribirSocio(socioMayor, 8, "Defensa");
+	    });
+	}
+
+	@Test
+	void testInscripcionDorsalOcupado()
+	{
+	    // HU-SOC-02 CA-3: Dorsal repetido
+	    equipo1.inscribirSocio(socio1, 10, "Delantero");
+
+	    assertThrows(IllegalArgumentException.class, () ->
+	    {
+	        equipo1.inscribirSocio(socio2, 10, "Defensa");
+	    });
+	}
+
+	@Test
+	void testInscripcionOtroEquipoMismoDeporte()
+	{
+	    // HU-SOC-02 CA-4: Un equipo por disciplina
+	    equipo1.inscribirSocio(socio1, 10, "Delantero");
+
+	    assertThrows(IllegalStateException.class, () ->
+	    {
+	        equipo2.inscribirSocio(socio1, 7, "Mediocampista");
+	    });
 	}
 
 }

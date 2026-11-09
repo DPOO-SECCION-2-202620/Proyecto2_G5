@@ -38,6 +38,10 @@ public class PruebaAdministracion {
 	private TorneoInterno torneo;
 	private PersonaExterna externo1;
 	private Tenis tenis;
+	private PlantillaTurnos plantillaTurnos;
+	private SolicitudCambioTurno solicitudValida;
+	private SolicitudCambioTurno solicitudSinEntrenadores;
+	private SolicitudCambioTurno solicitudSinFisioterapeuta;
 
 	@BeforeEach
 	void prepararTorneos() {
@@ -48,6 +52,21 @@ public class PruebaAdministracion {
 		torneo = administrador.crearTorneo("Tenis", "Avanzado", "INDIVIDUAL",
 				10, TipoTorneo.COMPETITIVO, 30000);
 		externo1 = new PersonaExterna("EXT-1", "Participante externo", "Avanzado");
+		plantillaTurnos = administrador.getPlantillaTurnos();
+		LocalDateTime inicio = LocalDateTime.now().plusDays(2).withHour(8).withMinute(0).withSecond(0).withNano(0);
+		LocalDateTime fin = inicio.plusHours(8);
+		Turno entrenador1 = new Turno(new Entrenador("entrenador-hu-1@club.co", "clave"), inicio, fin);
+		Turno entrenador2 = new Turno(new Entrenador("entrenador-hu-2@club.co", "clave"), inicio, fin);
+		Turno fisioterapeuta = new Turno(new Fisioterapeuta("fisio-hu@club.co", "clave"), inicio, fin);
+		plantillaTurnos.agregarTurno(entrenador1);
+		plantillaTurnos.agregarTurno(entrenador2);
+		plantillaTurnos.agregarTurno(fisioterapeuta);
+		solicitudValida = plantillaTurnos.solicitarCambio(entrenador1,
+				new Turno(new Entrenador("reemplazo-hu@club.co", "clave"), inicio, fin));
+		solicitudSinEntrenadores = plantillaTurnos.solicitarCambio(entrenador1,
+				new Turno(new Fisioterapeuta("fisio-extra-hu@club.co", "clave"), inicio, fin));
+		solicitudSinFisioterapeuta = plantillaTurnos.solicitarCambio(fisioterapeuta,
+				new Turno(new Entrenador("entrenador-extra-hu@club.co", "clave"), inicio, fin));
 	}
 	@Test void daDeBajaEquipo() {
 		Administrador admin = new Administrador("admin-baja-equipo@club.co", "clave");
@@ -249,6 +268,33 @@ public class PruebaAdministracion {
 	void testConsultarTorneoInexistente() {
 	    // HU-ADMIN-03: Torneo no encontrado
 	    assertNull(administrador.buscarTorneo(-1));
+	}
+
+	@Test
+	void testAprobarCambioTurno() {
+	    // HU-ADM-02 CA-1: Mantener personal minimo
+	    administrador.aprobarCambioTurno(solicitudValida);
+
+	    assertTrue(solicitudValida.estaAprobada());
+
+	    assertTrue(plantillaTurnos.getEntrenadoresDisponibles() >= 2);
+	    assertTrue(plantillaTurnos.getFisioterapeutasDisponibles() >= 1);
+	}
+
+	@Test
+	void testRechazarCambioSinEntrenadores() {
+	    // HU-ADM-02 CA-2: Menos de 2 entrenadores
+	    assertThrows(IllegalStateException.class, () ->{administrador.aprobarCambioTurno(solicitudSinEntrenadores);});
+
+	    assertFalse(solicitudSinEntrenadores.estaAprobada());
+	}
+
+	@Test
+	void testRechazarCambioSinFisioterapeuta() {
+	    // HU-ADM-02 CA-2: Menos de 1 fisioterapeuta
+	    assertThrows(IllegalStateException.class, () ->{administrador.aprobarCambioTurno(solicitudSinFisioterapeuta);});
+
+	    assertFalse(solicitudSinFisioterapeuta.estaAprobada());
 	}
 
 }
