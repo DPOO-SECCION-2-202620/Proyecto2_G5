@@ -390,6 +390,11 @@ public class GestorTienda {
     // SUGERENCIAS
     // -----------------------------
 
+    // Consulta las sugerencias registradas sin exponer la lista interna
+    public List<SugerenciaProducto> getSugerencias() {
+        return new ArrayList<>(sugerencias);
+    }
+
     public void registrarSugerencia(
             SugerenciaProducto sugerencia) {
 

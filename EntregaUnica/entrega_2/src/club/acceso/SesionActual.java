@@ -2,6 +2,8 @@ package club.acceso;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 import club.Inscripciones.InscripcionAcademia;
@@ -24,12 +26,16 @@ import club.partidos.PartidoPractica;
 import club.personal.Entrenador;
 import club.personal.Empleado;
 import club.personal.SolicitudCambioTurno;
+import club.personal.PlantillaTurnos;
+import club.personal.Turno;
 import club.reportes.ConsultasAdministrativas;
 import club.reportes.PeriodoReporte;
 import club.reportes.ReporteDeportivo;
 import club.reportes.RubroVenta;
 import club.tienda.GestorTienda;
 import club.tienda.Venta;
+import club.tienda.SugerenciaProducto;
+import club.tienda.TipoSugerencia;
 import club.torneos.TipoTorneo;
 import club.torneos.Torneo;
 import club.torneos.TorneoInterno;
@@ -169,6 +175,70 @@ public class SesionActual {
 		obtenerEntrenador();
 		validarEquipoRegistrado(equipo);
 		return equipo.getJugadoresNoDisponibles();
+	}
+
+	// Consulta los turnos asignados al empleado autenticado
+	public List<Turno> consultarMisTurnos() {
+		Empleado empleado = obtenerEmpleado();
+		List<Turno> turnos = new ArrayList<Turno>();
+		for (Usuario usuario : RepositorioUsuarios.getRepositorioUsuarios().values()) {
+			if (usuario instanceof Administrador) {
+				for (Turno turno : ((Administrador) usuario).getPlantillaTurnos().getTurnos()) {
+					if (turno.getEmpleado() == empleado) turnos.add(turno);
+				}
+			}
+		}
+		turnos.sort(Comparator.comparing(Turno::getInicio));
+		return turnos;
+	}
+
+	// Solicita un nuevo horario para un turno propio
+	public SolicitudCambioTurno solicitarCambioTurno(Turno anterior, LocalDateTime inicio, LocalDateTime fin) {
+		Empleado empleado = obtenerEmpleado();
+		if (anterior == null || anterior.getEmpleado() != empleado) {
+			throw new IllegalStateException("El turno no pertenece al empleado autenticado");
+		}
+		for (Usuario usuario : RepositorioUsuarios.getRepositorioUsuarios().values()) {
+			if (usuario instanceof Administrador) {
+				PlantillaTurnos plantilla = ((Administrador) usuario).getPlantillaTurnos();
+				if (plantilla.getTurnos().contains(anterior)) {
+					return plantilla.solicitarCambio(anterior, new Turno(empleado, inicio, fin));
+				}
+			}
+		}
+		throw new IllegalArgumentException("El turno no existe en una plantilla del club");
+	}
+
+	// Consulta las solicitudes enviadas por el empleado autenticado
+	public List<SolicitudCambioTurno> consultarMisSolicitudesCambio() {
+		Empleado empleado = obtenerEmpleado();
+		List<SolicitudCambioTurno> solicitudes = new ArrayList<SolicitudCambioTurno>();
+		for (Usuario usuario : RepositorioUsuarios.getRepositorioUsuarios().values()) {
+			if (usuario instanceof Administrador) {
+				for (SolicitudCambioTurno solicitud : ((Administrador) usuario).getPlantillaTurnos().getSolicitudes()) {
+					if (solicitud.getTurnoAnterior().getEmpleado() == empleado) solicitudes.add(solicitud);
+				}
+			}
+		}
+		return solicitudes;
+	}
+
+	// Registra una sugerencia a nombre del empleado autenticado
+	public void registrarSugerencia(GestorTienda gestor, String nombre, String descripcion, TipoSugerencia tipo) {
+		Empleado empleado = obtenerEmpleado();
+		if (gestor == null) throw new IllegalArgumentException("El gestor es obligatorio");
+		gestor.registrarSugerencia(new SugerenciaProducto(nombre, descripcion, tipo, empleado));
+	}
+
+	// Consulta las sugerencias propias del empleado autenticado
+	public List<SugerenciaProducto> consultarMisSugerencias(GestorTienda gestor) {
+		Empleado empleado = obtenerEmpleado();
+		if (gestor == null) throw new IllegalArgumentException("El gestor es obligatorio");
+		List<SugerenciaProducto> propias = new ArrayList<SugerenciaProducto>();
+		for (SugerenciaProducto sugerencia : gestor.getSugerencias()) {
+			if (sugerencia.getSolicitante() == empleado) propias.add(sugerencia);
+		}
+		return propias;
 	}
 
 	public Socio registrarSocio(String email, String contrasenia) {
@@ -319,6 +389,13 @@ public class SesionActual {
 		validarSesionActiva();
 		if (!(usuarioActual instanceof Socio)) throw new IllegalStateException("Se requiere un socio autenticado");
 		return (Socio) usuarioActual;
+	}
+
+	// Comprueba que la sesion pertenezca a un empleado activo
+	private Empleado obtenerEmpleado() {
+		validarSesionActiva();
+		if (!(usuarioActual instanceof Empleado)) throw new IllegalStateException("Se requiere un empleado autenticado");
+		return (Empleado) usuarioActual;
 	}
 
 	private Entrenador obtenerEntrenador() {

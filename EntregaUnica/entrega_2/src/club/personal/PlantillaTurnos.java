@@ -9,6 +9,7 @@ import club.usuarios.Administrador;
 
 public class PlantillaTurnos {
 	private List<Turno> turnos = new ArrayList<Turno>();
+	private List<SolicitudCambioTurno> solicitudes = new ArrayList<SolicitudCambioTurno>();
 
 	public void agregarTurno(Turno turno) {
 		if (turno == null) throw new IllegalArgumentException("El turno es obligatorio");
@@ -19,6 +20,7 @@ public class PlantillaTurnos {
 		if (!turnos.contains(anterior)) throw new IllegalArgumentException("El turno anterior no existe");
 		SolicitudCambioTurno solicitud = new SolicitudCambioTurno(anterior, nuevo);
 		solicitud.setPlantilla(this);
+		solicitudes.add(solicitud);
 		return solicitud;
 	}
 
@@ -37,6 +39,11 @@ public class PlantillaTurnos {
 	}
 
 	public List<Turno> getTurnos() { return new ArrayList<Turno>(turnos); }
+
+	// Consulta las solicitudes pendientes y procesadas de la plantilla
+	public List<SolicitudCambioTurno> getSolicitudes() {
+		return new ArrayList<SolicitudCambioTurno>(solicitudes);
+	}
 
 	public int getEntrenadoresDisponibles() {
 		int disponibles = 0;

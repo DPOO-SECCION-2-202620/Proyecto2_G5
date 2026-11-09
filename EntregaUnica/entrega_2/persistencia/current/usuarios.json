@@ -1,1 +1,1 @@
-[{"tipo":"SOCIO","email":"socio@club.co","contrasenia":"clave123","activo":"true","fechaNacimiento":"2008-07-12","suspensionesTotales":"0","suspensionRestante":"0","puntosFidelidad":"0"}]
+[{"tipo":"SOCIO","email":"socio@club.co","contrasenia":"clave123","activo":"true","fechaNacimiento":"2008-07-12","suspensionesTotales":"0","suspensionRestante":"0","puntosFidelidad":"0"},{"tipo":"ENTRENADOR","email":"entrenador@club.co","contrasenia":"clave123","activo":"true"},{"tipo":"FISIOTERAPEUTA","email":"fisio@club.co","contrasenia":"clave123","activo":"true"}]
