@@ -22,6 +22,7 @@ import club.partidos.Partido;
 import club.partidos.PartidoInterno;
 import club.partidos.PartidoPractica;
 import club.personal.Entrenador;
+import club.personal.Empleado;
 import club.personal.SolicitudCambioTurno;
 import club.reportes.ConsultasAdministrativas;
 import club.reportes.PeriodoReporte;
@@ -33,6 +34,7 @@ import club.torneos.TipoTorneo;
 import club.torneos.Torneo;
 import club.torneos.TorneoInterno;
 import club.torneos.PersonaExterna;
+import club.torneos.CatalogoTorneos;
 import club.usuarios.*;
 
 public class SesionActual {
@@ -68,6 +70,18 @@ public class SesionActual {
 		InscripcionEquipo inscripcion = new InscripcionEquipo();
 		inscripcion.inscribirSocio(obtenerSocio(), equipo, posicion, numeroCamiseta);
 		return inscripcion;
+	}
+
+	// Cambia la camiseta de una inscripcion del socio autenticado
+	public void actualizarNumeroCamiseta(InscripcionEquipo inscripcion, int numeroCamiseta) {
+		validarInscripcionPropia(inscripcion);
+		inscripcion.actualizarNumeroCamiseta(numeroCamiseta);
+	}
+
+	// Cambia la posicion de una inscripcion del socio autenticado
+	public void actualizarPosicion(InscripcionEquipo inscripcion, Enum<?> posicion) {
+		validarInscripcionPropia(inscripcion);
+		inscripcion.actualizarPosicion(posicion);
 	}
 
 	public List<DeporteIndividual> consultarDeportesIndividualesDisponibles() {
@@ -207,6 +221,28 @@ public class SesionActual {
 		obtenerEntrenador().inscribirEquipo(torneo, equipo);
 	}
 
+	// Inscribe al participante autenticado en un torneo individual
+	public void inscribirEnTorneo(TorneoInterno torneo) {
+		validarParticipanteTorneo(torneo);
+		torneo.inscribir(usuarioActual);
+	}
+
+	// Inscribe al participante autenticado con una pareja activa
+	public void inscribirParejaEnTorneo(TorneoInterno torneo, Usuario pareja) {
+		validarParticipanteTorneo(torneo);
+		if (pareja == null || pareja == usuarioActual || !pareja.isActivo()
+				|| !(pareja instanceof Socio || pareja instanceof Empleado)) {
+			throw new IllegalArgumentException("La pareja no es válida");
+		}
+		torneo.inscribirPareja(usuarioActual, pareja);
+	}
+
+	// Retira del torneo al participante autenticado
+	public void retirarseDeTorneo(TorneoInterno torneo) {
+		validarParticipanteTorneo(torneo);
+		torneo.retirar(usuarioActual);
+	}
+
 	public void registrarVenta(GestorTienda gestor, Venta venta) {
 		validarSesionActiva();
 		if (venta.getComprador() != usuarioActual) throw new IllegalStateException("La venta no corresponde al usuario autenticado");
@@ -257,6 +293,25 @@ public class SesionActual {
 	private void validarEquipoRegistrado(Equipo equipo) {
 		if (equipo == null || !Equipo.getEquiposRegistrados().containsValue(equipo)) {
 			throw new IllegalArgumentException("El equipo no existe");
+		}
+	}
+
+	// Comprueba que la inscripcion pertenezca al socio autenticado
+	private void validarInscripcionPropia(InscripcionEquipo inscripcion) {
+		Socio socio = obtenerSocio();
+		if (inscripcion == null || inscripcion.getSocio() != socio) {
+			throw new IllegalStateException("La inscripción no pertenece al socio autenticado");
+		}
+	}
+
+	// Comprueba la sesion y la existencia del torneo
+	private void validarParticipanteTorneo(TorneoInterno torneo) {
+		validarSesionActiva();
+		if (!(usuarioActual instanceof Socio || usuarioActual instanceof Empleado)) {
+			throw new IllegalStateException("Se requiere un socio o empleado autenticado");
+		}
+		if (torneo == null || CatalogoTorneos.buscar(torneo.getId()) != torneo) {
+			throw new IllegalArgumentException("El torneo no existe");
 		}
 	}
 

@@ -52,6 +52,11 @@ public class GestorTienda {
         return null;
     }
 
+    // Devuelve una copia del catalogo para mostrarlo en consola
+    public List<Producto> getProductos() {
+        return new ArrayList<>(productos);
+    }
+
     public void registrarProducto(Producto producto) {
 
         if (producto == null) {

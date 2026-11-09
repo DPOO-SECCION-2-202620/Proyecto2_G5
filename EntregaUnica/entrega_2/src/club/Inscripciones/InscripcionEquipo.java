@@ -77,6 +77,28 @@ public class InscripcionEquipo {
 		}
 	}
 
+	// Cambia la camiseta sin repetir numeros dentro del equipo
+	public void actualizarNumeroCamiseta(int numeroCamiseta) {
+		if (equipo == null || numeroCamiseta < 0) {
+			throw new IllegalArgumentException("El número de camiseta no es válido");
+		}
+		for (InscripcionEquipo inscripcion : equipo.getNomina()) {
+			if (inscripcion != this && inscripcion.numeroCamiseta == numeroCamiseta) {
+				throw new IllegalArgumentException("El número de camiseta ya está en uso");
+			}
+		}
+		this.numeroCamiseta = numeroCamiseta;
+	}
+
+	// Cambia la posicion por una admitida en el deporte
+	public void actualizarPosicion(Enum<?> posicion) {
+		if (equipo == null || posicion == null
+				|| !((DeporteConjunto) equipo.getDeporte()).getPosiciones().contains(posicion)) {
+			throw new IllegalArgumentException("La posición no pertenece al deporte seleccionado");
+		}
+		this.posicion = posicion;
+	}
+
 	public Enum<?> getPosicion() {
 		return posicion;
 	}
