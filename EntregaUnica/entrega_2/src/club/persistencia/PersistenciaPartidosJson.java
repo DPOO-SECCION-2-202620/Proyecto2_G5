@@ -92,7 +92,7 @@ final class PersistenciaPartidosJson {
 			Map<String, String> valores = new LinkedHashMap<String, String>(); valores.put("registro", "PRACTICA");
 			valores.put("deporte", partido.getDeporte().getNombre()); valores.put("modalidad", partido.getModalidad().name());
 			List<String> emails = new ArrayList<String>(); for (Usuario usuario : partido.getParticipantes()) emails.add(usuario.getEmail());
-			valores.put("participantes", String.join("|", emails)); valores.put("finalizado", String.valueOf(partido.isFinalizado()));
+				valores.put("participantes", PersistenciaSoporte.unir(emails)); valores.put("finalizado", String.valueOf(partido.isFinalizado()));
 			objetos.add(Json.objeto(valores));
 		}
 		return Json.arreglo(objetos);

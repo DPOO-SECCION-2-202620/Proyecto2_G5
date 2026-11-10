@@ -21,6 +21,7 @@ import club.torneos.PersonaExterna;
 import club.torneos.TipoTorneo;
 import club.torneos.Torneo;
 import club.torneos.TorneoInterno;
+import club.torneos.UnidadParticipacion;
 import club.usuarios.Administrador;
 import club.usuarios.RepositorioUsuarios;
 import club.usuarios.Usuario;
@@ -59,10 +60,15 @@ final class PersistenciaTorneosJson {
 		for (Map<String, String> registro : registros) if ("ENCUENTRO".equals(registro.get("registro"))) {
 			TorneoInterno torneo = CatalogoTorneos.buscar(Integer.parseInt(PersistenciaSoporte.requerido(registro, "torneo")));
 			String primero = registro.getOrDefault("puntaje1", ""), segundo = registro.getOrDefault("puntaje2", "");
-			torneo.restaurarEncuentro(deserializarParticipante(PersistenciaSoporte.requerido(registro, "participante1")),
-					deserializarParticipante(PersistenciaSoporte.requerido(registro, "participante2")),
-					primero.isEmpty() ? null : Integer.valueOf(primero),
-					segundo.isEmpty() ? null : Integer.valueOf(segundo));
+			Integer puntaje1 = primero.isEmpty() ? null : Integer.valueOf(primero);
+			Integer puntaje2 = segundo.isEmpty() ? null : Integer.valueOf(segundo);
+			if (registro.containsKey("inscripcion1") || registro.containsKey("inscripcion2")) {
+				torneo.restaurarEncuentro(Integer.parseInt(PersistenciaSoporte.requerido(registro, "inscripcion1")),
+						Integer.parseInt(PersistenciaSoporte.requerido(registro, "inscripcion2")), puntaje1, puntaje2);
+			} else {
+				torneo.restaurarEncuentro(deserializarParticipante(PersistenciaSoporte.requerido(registro, "participante1")),
+						deserializarParticipante(PersistenciaSoporte.requerido(registro, "participante2")), puntaje1, puntaje2);
+			}
 		}
 		for (Map<String, String> registro : registros) if ("BONO".equals(registro.get("registro"))) {
 			Usuario propietario = RepositorioUsuarios.buscarPorEmail(PersistenciaSoporte.requerido(registro, "propietario"));
@@ -101,6 +107,8 @@ final class PersistenciaTorneosJson {
 			for (EncuentroTorneo encuentro : torneo.getEncuentros()) {
 				Map<String, String> datos = new LinkedHashMap<String, String>();
 				datos.put("registro", "ENCUENTRO"); datos.put("torneo", String.valueOf(torneo.getId()));
+				datos.put("inscripcion1", idInscripcion(torneo, encuentro.getUnidad1()));
+				datos.put("inscripcion2", idInscripcion(torneo, encuentro.getUnidad2()));
 				datos.put("participante1", serializarParticipante(encuentro.getUnidad1().getIntegrantes().get(0)));
 				datos.put("participante2", serializarParticipante(encuentro.getUnidad2().getIntegrantes().get(0)));
 				datos.put("puntaje1", encuentro.tieneResultado() ? String.valueOf(encuentro.getPuntaje1()) : "");
@@ -124,20 +132,31 @@ final class PersistenciaTorneosJson {
 	private String serializarParticipantes(List<Object> participantes) {
 		List<String> valores = new ArrayList<String>();
 		for (Object participante : participantes) valores.add(serializarParticipante(participante));
-		return String.join("|", valores);
+		return PersistenciaSoporte.unir(valores);
+	}
+
+	private String idInscripcion(TorneoInterno torneo, UnidadParticipacion unidad) {
+		for (InscripcionTorneo inscripcion : torneo.getInscripciones())
+			if (inscripcion.getUnidadParticipacion() == unidad) return String.valueOf(inscripcion.getId());
+		throw new PersistenciaException("Encuentro con inscripción inexistente");
 	}
 
 	private String serializarParticipante(Object participante) {
 		if (participante instanceof Usuario) return "USUARIO:" + ((Usuario) participante).getEmail();
 		if (participante instanceof Equipo) return "EQUIPO:" + ((Equipo) participante).getNombre();
 		PersonaExterna externo = (PersonaExterna) participante;
-		return "EXTERNO:" + externo.getIdentificacion() + ";" + externo.getNombre() + ";" + externo.getCategoria();
+		return "EXTERNO2:" + PersistenciaSoporte.unir(List.of(
+				externo.getIdentificacion(), externo.getNombre(), externo.getCategoria()));
 	}
 
 	private Object deserializarParticipante(String valor) {
 		if (valor.startsWith("USUARIO:")) return RepositorioUsuarios.buscarPorEmail(valor.substring(8));
 		if (valor.startsWith("EQUIPO:")) return Equipo.getEquiposRegistrados().get(valor.substring(7));
-		String[] datos = valor.substring(8).split(";", -1);
-		return new PersonaExterna(datos[0], datos[1], datos[2]);
+		List<String> datos;
+		if (valor.startsWith("EXTERNO2:")) datos = PersistenciaSoporte.separar(valor.substring(9));
+		else if (valor.startsWith("EXTERNO:")) datos = List.of(valor.substring(8).split(";", -1));
+		else throw new PersistenciaException("Tipo de participante desconocido");
+		if (datos.size() != 3) throw new PersistenciaException("Datos de participante externo incompletos");
+		return new PersonaExterna(datos.get(0), datos.get(1), datos.get(2));
 	}
 }

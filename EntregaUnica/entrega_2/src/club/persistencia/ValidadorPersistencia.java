@@ -35,6 +35,9 @@ final class ValidadorPersistencia {
 
 	private void validarComercial(List<Map<String, String>> registros, Map<String, String> usuarios) {
 		for (Map<String, String> r : registros) {
+			String registro = r.getOrDefault("registro", "VENTA");
+			if (List.of("PRODUCTO", "ALERGENO", "UBICACION", "INVENTARIO", "CODIGO", "SUGERENCIA", "DETALLE").contains(registro)) continue;
+			if (!"VENTA".equals(registro)) throw new PersistenciaException("Registro comercial desconocido");
 			if (!List.of("TIENDA", "CAFETERIA").contains(requerido(r, "tipo"))) throw new PersistenciaException("Tipo de venta desconocido");
 			if (!usuarios.containsKey(requerido(r, "comprador"))) throw new PersistenciaException("Comprador inexistente");
 			LocalDateTime.parse(requerido(r, "fecha")); Double.parseDouble(requerido(r, "subtotal"));
@@ -69,8 +72,13 @@ final class ValidadorPersistencia {
 				for (String participante : separar(requerido(r, "participantes"))) validarParticipanteTorneo(participante, usuarios, equipos);
 			} else if ("ENCUENTRO".equals(clase)) {
 				if (!torneos.containsKey(requerido(r, "torneo"))) throw new PersistenciaException("Encuentro con torneo inexistente");
-				validarParticipanteTorneo(requerido(r, "participante1"), usuarios, equipos);
-				validarParticipanteTorneo(requerido(r, "participante2"), usuarios, equipos);
+				if (r.containsKey("inscripcion1") || r.containsKey("inscripcion2")) {
+					Integer.parseInt(requerido(r, "inscripcion1"));
+					Integer.parseInt(requerido(r, "inscripcion2"));
+				} else {
+					validarParticipanteTorneo(requerido(r, "participante1"), usuarios, equipos);
+					validarParticipanteTorneo(requerido(r, "participante2"), usuarios, equipos);
+				}
 				String primero = requerido(r, "puntaje1"), segundo = requerido(r, "puntaje2");
 				if (!primero.isEmpty()) Integer.parseInt(primero); if (!segundo.isEmpty()) Integer.parseInt(segundo);
 			} else if ("BONO".equals(clase)) {
@@ -86,6 +94,7 @@ final class ValidadorPersistencia {
 			Map<String, String> equipos) {
 		if (participante.startsWith("USUARIO:") && usuarios.containsKey(participante.substring(8))) return;
 		if (participante.startsWith("EQUIPO:") && equipos.containsKey(participante.substring(7))) return;
+		if (participante.startsWith("EXTERNO2:") && separar(participante.substring(9)).size() == 3) return;
 		if (participante.startsWith("EXTERNO:") && participante.substring(8).split(";", -1).length == 3) return;
 		throw new PersistenciaException("Participante de torneo inexistente");
 	}
@@ -124,7 +133,8 @@ final class ValidadorPersistencia {
 				validarBooleano(requerido(r, "activo")); if (equipos.put(nombre, requerido(r, "deporte")) != null) throw new PersistenciaException("Equipo duplicado");
 			} else if ("INSCRIPCION_INDIVIDUAL".equals(clase)) {
 				if (!"SOCIO".equals(usuarios.get(requerido(r, "socio"))) || !deportes.containsKey(requerido(r, "deporte"))) throw new PersistenciaException("Inscripción individual inconsistente");
-				if (Double.parseDouble(requerido(r, "elo")) < 0) throw new PersistenciaException("ELO inválido");
+				double elo = Double.parseDouble(requerido(r, "elo"));
+				if (!Double.isFinite(elo) || elo < 0) throw new PersistenciaException("ELO inválido");
 			} else if ("INSCRIPCION_EQUIPO".equals(clase)) {
 				if (!"SOCIO".equals(usuarios.get(requerido(r, "socio"))) || !equipos.containsKey(requerido(r, "equipo"))) throw new PersistenciaException("Inscripción de equipo inconsistente");
 				requerido(r, "posicion"); Integer.parseInt(requerido(r, "camiseta"));
@@ -140,6 +150,7 @@ final class ValidadorPersistencia {
 			String clase = r.get("registro");
 			if ("INSTALACION".equals(clase)) {
 				String nombre = requerido(r, "nombre"), deporte = requerido(r, "deporte");
+				validarBooleano(r.getOrDefault("techada", "false"));
 				if (!deporte.isEmpty() && !deportes.containsKey(deporte)) throw new PersistenciaException("Instalación con deporte inexistente");
 				for (String modalidad : separar(requerido(r, "modalidades"))) Modalidad.valueOf(modalidad);
 				if (instalaciones.put(nombre, true) != null) throw new PersistenciaException("Instalación duplicada");
@@ -197,7 +208,7 @@ final class ValidadorPersistencia {
 
 	private void validarEntrenamientos(List<Map<String, String>> registros, Map<String, String> usuarios,
 			Map<String, String> deportes, Map<String, Boolean> instalaciones) {
-		Map<String, Boolean> sesiones = new LinkedHashMap<String, Boolean>();
+		Map<String, List<String>> sesiones = new LinkedHashMap<String, List<String>>();
 		for (Map<String, String> r : registros) {
 			String clase = r.get("registro");
 			if ("SESION".equals(clase)) {
@@ -205,9 +216,10 @@ final class ValidadorPersistencia {
 				if (!"ENTRENADOR".equals(usuarios.get(requerido(r, "entrenador"))) || !deportes.containsKey(requerido(r, "deporte")) || !instalaciones.containsKey(requerido(r, "instalacion"))) throw new PersistenciaException("Sesión inconsistente");
 				LocalDateTime.parse(requerido(r, "fechaHora")); if (Long.parseLong(requerido(r, "duracion")) <= 0) throw new PersistenciaException("Duración inválida");
 				for (String email : separar(requerido(r, "convocados"))) if (!"SOCIO".equals(usuarios.get(email))) throw new PersistenciaException("Convocado inexistente");
-				if (sesiones.put(id, true) != null) throw new PersistenciaException("Sesión duplicada");
+				if (sesiones.put(id, separar(requerido(r, "convocados"))) != null) throw new PersistenciaException("Sesión duplicada");
 			} else if ("REGISTRO".equals(clase)) {
 				if (!sesiones.containsKey(requerido(r, "sesion")) || !"SOCIO".equals(usuarios.get(requerido(r, "socio")))) throw new PersistenciaException("Registro de entrenamiento inconsistente");
+				if (!sesiones.get(r.get("sesion")).contains(r.get("socio"))) throw new PersistenciaException("Asistencia de un socio no convocado");
 				EstadoAsistencia.valueOf(requerido(r, "estado")); String nota = requerido(r, "calificacion");
 				if (!nota.isEmpty()) { int valor = Integer.parseInt(nota); if (valor < 1 || valor > 5) throw new PersistenciaException("Calificación inválida"); }
 				requerido(r, "comentario");

@@ -26,7 +26,8 @@ final class PersistenciaReservasJson {
 					: (DeporteIndividual) Deporte.getDeportesRegistrados().get(nombreDeporte);
 			List<Modalidad> modalidades = new ArrayList<Modalidad>();
 			for (String valor : PersistenciaSoporte.separar(registro.get("modalidades"))) modalidades.add(Modalidad.valueOf(valor));
-			new Instalacion(PersistenciaSoporte.requerido(registro, "nombre"), deporte, modalidades);
+			new Instalacion(PersistenciaSoporte.requerido(registro, "nombre"), deporte, modalidades,
+					Boolean.parseBoolean(registro.getOrDefault("techada", "false")));
 		}
 		for (Map<String, String> registro : registros) {
 			if (!"RESERVA".equals(registro.get("registro"))) continue;
@@ -45,7 +46,9 @@ final class PersistenciaReservasJson {
 			Map<String, String> valores = new LinkedHashMap<String, String>();
 			valores.put("registro", "INSTALACION"); valores.put("nombre", instalacion.getNombre());
 			valores.put("deporte", instalacion.getDeporteIndividual() == null ? "" : instalacion.getDeporteIndividual().getNombre());
-			valores.put("modalidades", PersistenciaSoporte.unirEnums(instalacion.getModalidades())); objetos.add(Json.objeto(valores));
+			valores.put("modalidades", PersistenciaSoporte.unirEnums(instalacion.getModalidades()));
+			valores.put("techada", String.valueOf(instalacion.isTechada()));
+			objetos.add(Json.objeto(valores));
 		}
 		for (Reserva reserva : Reserva.getReservas()) {
 			Map<String, String> valores = new LinkedHashMap<String, String>();

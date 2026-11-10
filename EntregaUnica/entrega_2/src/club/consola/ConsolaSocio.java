@@ -518,8 +518,8 @@ public class ConsolaSocio {
         EntradaConsola entrada = new EntradaConsola(new Scanner(System.in), System.out);
         try (ClubDeportivoSeneca club = new ClubDeportivoSeneca()) {
             ConsolaInicioSesion inicio = new ConsolaInicioSesion(entrada, club.getAutenticador());
-            GestorTienda gestor = new GestorTienda();
-            List<CodigoDescuento> codigos = new ArrayList<>();
+            GestorTienda gestor = club.getGestorTienda();
+            List<CodigoDescuento> codigos = gestor.getCodigos();
             boolean continuar = true;
             while (continuar) {
                 SesionActual sesion = inicio.iniciarSesion(Socio.class);

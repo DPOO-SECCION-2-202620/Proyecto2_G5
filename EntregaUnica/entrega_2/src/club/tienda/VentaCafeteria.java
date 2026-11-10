@@ -174,7 +174,15 @@ public class VentaCafeteria extends Venta {
     }
 
 	public double getPropina() {
-		return calcularSubtotal() * propinaPorcentaje;
+		return (estaConfirmada() ? subtotal : calcularSubtotal()) * propinaPorcentaje;
+	}
+
+	public Instalacion getInstalacion() {
+		return instalacion;
+	}
+
+	public void restaurarInstalacion(Instalacion instalacion) {
+		this.instalacion = instalacion;
 	}
 
 	private void validarBebidaCaliente() {

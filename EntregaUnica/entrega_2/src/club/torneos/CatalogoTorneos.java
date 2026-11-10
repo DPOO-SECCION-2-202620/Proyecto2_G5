@@ -35,4 +35,14 @@ public final class CatalogoTorneos {
 		torneos.clear();
 		siguienteId = 1;
 	}
+
+	public static int getSiguienteId() { return siguienteId; }
+
+	public static void restaurarCatalogo(List<TorneoInterno> originales, int siguiente) {
+		torneos.clear();
+		for (TorneoInterno torneo : originales) {
+			torneos.put(torneo.getId(), torneo);
+		}
+		siguienteId = siguiente;
+	}
 }

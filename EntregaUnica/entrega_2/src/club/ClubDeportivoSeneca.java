@@ -1,12 +1,24 @@
 package club;
 
 import java.io.PrintStream;
+import java.util.NoSuchElementException;
 import java.util.Scanner;
 
 import club.acceso.Autenticador;
 import club.acceso.SesionActual;
+import club.consola.ConsolaAdministrador;
+import club.consola.ConsolaEmpleado;
+import club.consola.ConsolaInicioSesion;
+import club.consola.ConsolaSocio;
+import club.consola.EntradaConsola;
 import club.persistencia.CentralPersistencia;
 import club.persistencia.IPersistenciaClub;
+import club.persistencia.PersistenciaException;
+import club.personal.Empleado;
+import club.tienda.GestorTienda;
+import club.usuarios.Administrador;
+import club.usuarios.Socio;
+import club.usuarios.Usuario;
 
 public class ClubDeportivoSeneca implements AutoCloseable {
 
@@ -31,48 +43,35 @@ public class ClubDeportivoSeneca implements AutoCloseable {
 		return autenticador;
 	}
 
+	public GestorTienda getGestorTienda() {
+		if (!disponible) throw new IllegalStateException("El sistema no está disponible");
+		return persistencia.getGestorTienda();
+	}
+
 	public void ejecutar(Scanner entrada, PrintStream salida) {
 		if (!disponible) throw new IllegalStateException("El sistema no está disponible");
-		boolean continuar = true;
-		while (continuar && entrada.hasNextLine()) {
-			SesionActual sesion = autenticador.getSesionActual();
-			if (sesion == null || !sesion.haySesionActiva()) {
-				salida.println("Club Deportivo Séneca");
-				salida.println("1. Iniciar sesión");
-				salida.println("0. Salir");
-				salida.print("Seleccione una opción: ");
-				String opcion = entrada.nextLine().trim();
-				if ("1".equals(opcion)) iniciarSesion(entrada, salida);
-				else if ("0".equals(opcion)) continuar = false;
-				else salida.println("Opción no válida.");
-			} else {
-				salida.println("Sesión iniciada: " + sesion.getUsuarioActual().getEmail());
-				salida.println("1. Cerrar sesión");
-				salida.println("0. Guardar y salir");
-				salida.print("Seleccione una opción: ");
-				String opcion = entrada.nextLine().trim();
-				if ("1".equals(opcion)) sesion.cerrarSesion();
-				else if ("0".equals(opcion)) continuar = false;
-				else salida.println("Opción no válida.");
+		EntradaConsola consola = new EntradaConsola(entrada, salida);
+		ConsolaInicioSesion inicio = new ConsolaInicioSesion(consola, autenticador);
+		try {
+			boolean continuar = true;
+			while (continuar) {
+				SesionActual sesion = inicio.iniciarSesion(Usuario.class);
+				if (sesion == null) break;
+				Usuario usuario = sesion.getUsuarioActual();
+				GestorTienda gestor = getGestorTienda();
+				if (usuario instanceof Administrador)
+					continuar = new ConsolaAdministrador(consola, sesion, gestor).ejecutar();
+				else if (usuario instanceof Socio)
+					continuar = new ConsolaSocio(consola, sesion, gestor, gestor.getCodigos()).ejecutar();
+				else if (usuario instanceof Empleado)
+					continuar = new ConsolaEmpleado(consola, sesion, gestor, gestor.getCodigos()).ejecutar();
+				else throw new IllegalStateException("Tipo de usuario desconocido");
 			}
+		} catch (NoSuchElementException e) {
+			salida.println("Entrada finalizada.");
 		}
 		close();
 		salida.println("Información guardada. Programa finalizado.");
-	}
-
-	private void iniciarSesion(Scanner entrada, PrintStream salida) {
-		salida.print("Correo: ");
-		if (!entrada.hasNextLine()) return;
-		String email = entrada.nextLine().trim();
-		salida.print("Contraseña: ");
-		if (!entrada.hasNextLine()) return;
-		String contrasenia = entrada.nextLine();
-		try {
-			autenticador.autenticar(email, contrasenia);
-			salida.println("Inicio de sesión exitoso.");
-		} catch (IllegalArgumentException e) {
-			salida.println("No fue posible iniciar sesión: " + e.getMessage());
-		}
 	}
 
 	@Override
@@ -83,7 +82,10 @@ public class ClubDeportivoSeneca implements AutoCloseable {
 	}
 
 	public static void main(String[] args) {
-		ClubDeportivoSeneca club = new ClubDeportivoSeneca();
-		club.ejecutar(new Scanner(System.in), System.out);
+		try (ClubDeportivoSeneca club = new ClubDeportivoSeneca()) {
+			club.ejecutar(new Scanner(System.in), System.out);
+		} catch (PersistenciaException e) {
+			System.out.println("No fue posible completar la persistencia: " + e.getMessage());
+		}
 	}
 }

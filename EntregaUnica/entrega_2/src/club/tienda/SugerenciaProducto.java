@@ -14,13 +14,18 @@ public class SugerenciaProducto {
 	
 	//ctor
 	public SugerenciaProducto(String nombre, String descripcion, TipoSugerencia tipo, Empleado solicitante) {
+		this(nombre, descripcion, tipo, solicitante, EstadoSugerencia.PENDIENTE);
+	}
+
+	public SugerenciaProducto(String nombre, String descripcion, TipoSugerencia tipo, Empleado solicitante,
+			EstadoSugerencia estado) {
 		this.nombre = nombre;
 		this.descripcion = descripcion;
 		this.tipo = tipo;
-		if (nombre == null || nombre.isBlank() || descripcion == null || tipo == null || solicitante == null) {
+		if (nombre == null || nombre.isBlank() || descripcion == null || tipo == null || solicitante == null || estado == null) {
 			throw new IllegalArgumentException("Los datos de la sugerencia no son válidos");
 		}
-		this.estado = EstadoSugerencia.PENDIENTE;
+		this.estado = estado;
 		this.solicitante = solicitante;
 	}
 
@@ -36,6 +41,10 @@ public class SugerenciaProducto {
 
 	public EstadoSugerencia getEstado() {
 		return estado;
+	}
+
+	public TipoSugerencia getTipo() {
+		return tipo;
 	}
 
 	public Empleado getSolicitante() {

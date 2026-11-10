@@ -7,7 +7,6 @@ import club.ClubDeportivoSeneca;
 import club.acceso.SesionActual;
 import club.persistencia.PersistenciaException;
 import club.tienda.GestorTienda;
-import club.tienda.Venta;
 import club.usuarios.Administrador;
 
 // Consola principal del administrador. Cada grupo de funcionalidades vive en su propia clase.
@@ -71,9 +70,7 @@ public class ConsolaAdministrador {
         EntradaConsola entrada = new EntradaConsola(new Scanner(System.in), System.out);
         try (ClubDeportivoSeneca club = new ClubDeportivoSeneca()) {
             ConsolaInicioSesion inicio = new ConsolaInicioSesion(entrada, club.getAutenticador());
-            // Las ventas cargadas de los archivos se pasan al gestor para que los reportes las incluyan
-            GestorTienda gestor = new GestorTienda();
-            for (Venta venta : Venta.getVentasConfirmadas()) gestor.registrarVenta(venta);
+            GestorTienda gestor = club.getGestorTienda();
             boolean continuar = true;
             while (continuar) {
                 SesionActual sesion = inicio.iniciarSesion(Administrador.class);

@@ -9,12 +9,15 @@ public class DetalleVenta {
 
 	//ctor
 	public DetalleVenta(int cantidad,  Producto producto) {
-		super();
-		if (cantidad <= 0 || producto == null) {
+		this(cantidad, producto, producto == null ? 0 : producto.getPrecio());
+	}
+
+	public DetalleVenta(int cantidad, Producto producto, double precioUnitario) {
+		if (cantidad <= 0 || producto == null || !Double.isFinite(precioUnitario) || precioUnitario < 0) {
 			throw new IllegalArgumentException("El detalle de venta no es válido");
 		}
 		this.cantidad = cantidad;
-		this.precioUnitario = producto.getPrecio();
+		this.precioUnitario = precioUnitario;
 		this.producto = producto;
 	}
 	

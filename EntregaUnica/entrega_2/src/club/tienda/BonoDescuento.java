@@ -4,6 +4,8 @@ import java.time.LocalDateTime;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 
 import club.torneos.TorneoInterno;
 import club.usuarios.Usuario;
@@ -78,4 +80,16 @@ public class BonoDescuento {
 	public boolean estaDisponible() { return estado == EstadoBono.DISPONIBLE; }
 	public static BonoDescuento buscar(String id) { return bonosRegistrados.get(id); }
 	public static void limpiar() { bonosRegistrados.clear(); siguienteId.set(1); }
+
+	public static List<BonoDescuento> getBonosRegistrados() {
+		return new ArrayList<>(bonosRegistrados.values());
+	}
+
+	public static int getSiguienteId() { return siguienteId.get(); }
+
+	public static void restaurarCatalogo(List<BonoDescuento> originales, int siguiente) {
+		bonosRegistrados.clear();
+		for (BonoDescuento bono : originales) bonosRegistrados.put(bono.id, bono);
+		siguienteId.set(siguiente);
+	}
 }

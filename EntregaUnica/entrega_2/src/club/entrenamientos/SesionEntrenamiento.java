@@ -140,6 +140,9 @@ public class SesionEntrenamiento {
 	public void eliminarConvocado(Usuario usuario, Socio socio) {
 		validarPermiso(usuario);
 		validarSesionRegistrada();
+		if (registros.containsKey(socio)) {
+			throw new IllegalStateException("No se puede retirar a un convocado que ya tiene asistencia registrada");
+		}
 		convocados.remove(socio);
 	}
 

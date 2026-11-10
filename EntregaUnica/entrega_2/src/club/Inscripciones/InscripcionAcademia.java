@@ -62,7 +62,10 @@ public class InscripcionAcademia {
 	}
 
 	public void actualizarElo(double cambio) {
-		this.elo += cambio;
+		if (!Double.isFinite(cambio) || !Double.isFinite(this.elo + cambio)) {
+			throw new IllegalArgumentException("El cambio de ELO no es válido");
+		}
+		this.elo = Math.max(0, this.elo + cambio);
 		if (this.elo >= 90) this.nivel = Nivel.AVANZADO;
 		else if (this.elo >= 30) this.nivel = Nivel.INTERMEDIO;
 		else this.nivel = Nivel.PRINCIPIANTE;

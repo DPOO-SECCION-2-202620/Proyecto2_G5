@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 import club.personal.Entrenador;
+import club.personal.Empleado;
 import club.personal.Fisioterapeuta;
 import club.usuarios.Administrador;
 import club.usuarios.RepositorioUsuarios;
@@ -37,6 +38,8 @@ final class PersistenciaUsuariosJson {
 					Integer.parseInt(registro.getOrDefault("suspensionRestante", "0")));
 			if (usuario instanceof Socio) ((Socio) usuario).getSaldoFidelidad().agregarPuntos(
 					Integer.parseInt(registro.getOrDefault("puntosFidelidad", "0")));
+			if (usuario instanceof Empleado) ((Empleado) usuario).getSaldoFidelidad().agregarPuntos(
+					Integer.parseInt(registro.getOrDefault("puntosFidelidad", "0")));
 		}
 	}
 
@@ -57,6 +60,8 @@ final class PersistenciaUsuariosJson {
 				valores.put("suspensionRestante", String.valueOf(((Socio) usuario).getSuspensionRestante()));
 				valores.put("puntosFidelidad", String.valueOf(((Socio) usuario).getSaldoFidelidad().getPuntos()));
 			}
+			if (usuario instanceof Empleado)
+				valores.put("puntosFidelidad", String.valueOf(((Empleado) usuario).getSaldoFidelidad().getPuntos()));
 			objetos.add(Json.objeto(valores));
 		}
 		return Json.arreglo(objetos);

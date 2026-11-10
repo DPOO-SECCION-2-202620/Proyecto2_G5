@@ -15,6 +15,9 @@ public class InscripcionTorneo {
 	private EstadoInscripcion estado;
 	private LocalDateTime fecha;
 
+	public static int getSiguienteId() { return siguienteId; }
+	public static void restaurarSiguienteId(int siguiente) { siguienteId = siguiente; }
+
 	InscripcionTorneo(TorneoInterno torneo, UnidadParticipacion unidadParticipacion, boolean preferencial,
 			double tarifaPagada, boolean recibePremio) {
 		this.id = siguienteId++;

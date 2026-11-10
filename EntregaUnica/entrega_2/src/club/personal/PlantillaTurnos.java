@@ -18,8 +18,14 @@ public class PlantillaTurnos {
 
 	public SolicitudCambioTurno solicitarCambio(Turno anterior, Turno nuevo) {
 		if (!turnos.contains(anterior)) throw new IllegalArgumentException("El turno anterior no existe");
+		return restaurarSolicitud(anterior, nuevo, false, false);
+	}
+
+	public SolicitudCambioTurno restaurarSolicitud(Turno anterior, Turno nuevo, boolean procesada, boolean aprobada) {
+		if (aprobada && !procesada) throw new IllegalArgumentException("Una solicitud pendiente no puede estar aprobada");
 		SolicitudCambioTurno solicitud = new SolicitudCambioTurno(anterior, nuevo);
 		solicitud.setPlantilla(this);
+		if (procesada) solicitud.resolver(aprobada);
 		solicitudes.add(solicitud);
 		return solicitud;
 	}

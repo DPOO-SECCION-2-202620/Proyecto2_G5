@@ -20,6 +20,7 @@ public class GestorTienda {
     private List<UbicacionInventario> ubicaciones;
     private List<Venta> ventas;
     private List<SugerenciaProducto> sugerencias;
+    private List<CodigoDescuento> codigos;
 
     // Constructor
     public GestorTienda() {
@@ -28,6 +29,30 @@ public class GestorTienda {
         this.ubicaciones = new ArrayList<>();
         this.ventas = new ArrayList<>();
         this.sugerencias = new ArrayList<>();
+        this.codigos = new ArrayList<>();
+    }
+
+    public void limpiar() {
+        productos.clear();
+        inventarios.clear();
+        ubicaciones.clear();
+        ventas.clear();
+        sugerencias.clear();
+        codigos.clear();
+    }
+
+    public List<CodigoDescuento> getCodigos() {
+        return new ArrayList<>(codigos);
+    }
+
+    public void registrarCodigo(CodigoDescuento codigo) {
+        if (codigo == null) throw new IllegalArgumentException("El código es obligatorio");
+        for (CodigoDescuento existente : codigos) {
+            if (existente.getCodigo().equalsIgnoreCase(codigo.getCodigo())) {
+                throw new IllegalArgumentException("El código ya está registrado");
+            }
+        }
+        codigos.add(codigo);
     }
 
     // -----------------------------
@@ -43,7 +68,7 @@ public class GestorTienda {
 
         for (Producto producto : productos) {
 
-            if (producto.getNombre()
+            if (producto.getNombre().trim()
                     .equalsIgnoreCase(nombre.trim())) {
                 return producto;
             }
@@ -85,7 +110,7 @@ public class GestorTienda {
 
         for (UbicacionInventario ubicacion : ubicaciones) {
 
-            if (ubicacion.getId().equals(id.trim())) {
+            if (ubicacion.getId().trim().equals(id.trim())) {
                 return ubicacion;
             }
         }
@@ -107,6 +132,10 @@ public class GestorTienda {
         }
 
         ubicaciones.add(ubicacion);
+    }
+
+    public List<UbicacionInventario> getUbicaciones() {
+        return new ArrayList<>(ubicaciones);
     }
 
     // -----------------------------
@@ -134,6 +163,20 @@ public class GestorTienda {
 
     public List<Inventario> consultarInventarios() {
         return new ArrayList<>(inventarios);
+    }
+
+    public void registrarInventario(Inventario inventario) {
+        if (inventario == null || !productos.contains(inventario.getArticulo())
+                || !ubicaciones.contains(inventario.getUbicacion())) {
+            throw new IllegalArgumentException("Artículo o ubicación no registrados");
+        }
+        for (Inventario existente : inventarios) {
+            if (existente.getArticulo() == inventario.getArticulo()
+                    && existente.getUbicacion() == inventario.getUbicacion()) {
+                throw new IllegalArgumentException("El inventario ya está registrado");
+            }
+        }
+        inventarios.add(inventario);
     }
 
     public void reabastecer(
@@ -385,6 +428,14 @@ public class GestorTienda {
 	public List<Venta> getVentas() {
 		return new ArrayList<Venta>(ventas);
 	}
+
+    public void registrarVentaHistorica(Venta venta) {
+        if (venta == null || !venta.estaConfirmada() || ventas.contains(venta)) {
+            throw new IllegalArgumentException("La venta histórica no es válida");
+        }
+        ventas.add(venta);
+        if (!Venta.getVentasConfirmadas().contains(venta)) Venta.registrarHistorica(venta);
+    }
 
     // -----------------------------
     // SUGERENCIAS

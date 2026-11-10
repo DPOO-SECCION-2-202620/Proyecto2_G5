@@ -1,5 +1,8 @@
 package club.persistencia;
 
+import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -28,19 +31,33 @@ final class PersistenciaSoporte {
 
 	static List<String> separar(String valores) {
 		if (valores == null || valores.isEmpty()) return new ArrayList<String>();
+		if (valores.startsWith("@2:")) {
+			List<String> resultado = new ArrayList<>();
+			for (String valor : valores.substring(3).split("\\|", -1)) {
+				resultado.add(URLDecoder.decode(valor, StandardCharsets.UTF_8));
+			}
+			return resultado;
+		}
 		return List.of(valores.split("\\|", -1));
+	}
+
+	static String unir(List<String> valores) {
+		if (valores.isEmpty()) return "";
+		List<String> codificados = new ArrayList<>();
+		for (String valor : valores) codificados.add(URLEncoder.encode(valor, StandardCharsets.UTF_8));
+		return "@2:" + String.join("|", codificados);
 	}
 
 	static String unirEnums(List<? extends Enum<?>> valores) {
 		List<String> nombres = new ArrayList<String>();
 		for (Enum<?> valor : valores) nombres.add(valor.name());
-		return String.join("|", nombres);
+		return unir(nombres);
 	}
 
 	static String unirSocios(List<Socio> socios) {
 		List<String> emails = new ArrayList<String>();
 		for (Socio socio : socios) emails.add(socio.getEmail());
-		return String.join("|", emails);
+		return unir(emails);
 	}
 
 	static Socio socio(String email) {

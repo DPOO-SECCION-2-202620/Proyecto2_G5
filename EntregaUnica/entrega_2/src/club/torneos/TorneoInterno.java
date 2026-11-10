@@ -233,6 +233,8 @@ public class TorneoInterno extends Torneo {
 	public InscripcionTorneo restaurarInscripcion(int id, List<Object> participantes,
 			boolean preferencial, double tarifa, boolean premio, EstadoInscripcion estado,
 			LocalDateTime fecha) {
+		if (id <= 0 || buscarInscripcionPorId(id) != null)
+			throw new IllegalArgumentException("Identificador de inscripción inválido o duplicado");
 		UnidadParticipacion unidad = new UnidadParticipacion(getModalidad(), participantes);
 		InscripcionTorneo inscripcion = new InscripcionTorneo(this, unidad, preferencial, tarifa, premio);
 		inscripcion.restaurarDatos(id, estado, fecha);
@@ -245,7 +247,26 @@ public class TorneoInterno extends Torneo {
 			Integer puntaje1, Integer puntaje2) {
 		InscripcionTorneo inscripcion1 = buscarInscripcionHistorica(participante1);
 		InscripcionTorneo inscripcion2 = buscarInscripcionHistorica(participante2);
+		return restaurarEncuentro(inscripcion1, inscripcion2, puntaje1, puntaje2);
+	}
+
+	public EncuentroTorneo restaurarEncuentro(int inscripcion1, int inscripcion2,
+			Integer puntaje1, Integer puntaje2) {
+		return restaurarEncuentro(buscarInscripcionPorId(inscripcion1), buscarInscripcionPorId(inscripcion2),
+				puntaje1, puntaje2);
+	}
+
+	private InscripcionTorneo buscarInscripcionPorId(int id) {
+		for (InscripcionTorneo inscripcion : inscripciones)
+			if (inscripcion.getId() == id) return inscripcion;
+		return null;
+	}
+
+	private EncuentroTorneo restaurarEncuentro(InscripcionTorneo inscripcion1, InscripcionTorneo inscripcion2,
+			Integer puntaje1, Integer puntaje2) {
 		if (inscripcion1 == null || inscripcion2 == null) throw new IllegalArgumentException("Participante inexistente");
+		if (inscripcion1 == inscripcion2) throw new IllegalArgumentException("El encuentro requiere dos inscripciones distintas");
+		if ((puntaje1 == null) != (puntaje2 == null)) throw new IllegalArgumentException("Resultado incompleto");
 		EncuentroTorneo encuentro = EncuentroTorneo.restaurar(this,
 				inscripcion1.getUnidadParticipacion(), inscripcion2.getUnidadParticipacion());
 		encuentros.add(encuentro);
@@ -254,8 +275,10 @@ public class TorneoInterno extends Torneo {
 	}
 
 	private InscripcionTorneo buscarInscripcionHistorica(Object participante) {
-		for (InscripcionTorneo inscripcion : inscripciones)
-			if (inscripcion.getUnidadParticipacion().contiene(participante)) return inscripcion;
+		InscripcionTorneo activa = getInscripcion(participante);
+		if (activa != null) return activa;
+		for (int i = inscripciones.size() - 1; i >= 0; i--)
+			if (inscripciones.get(i).getUnidadParticipacion().contiene(participante)) return inscripciones.get(i);
 		return null;
 	}
 
